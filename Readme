@@ -1,0 +1,101 @@
+# ==========================================
+# PROJECT: TitanGuard AI (Titanic Survival Predictor)
+# ==========================================
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+# 1. Dataset Load Karna (Apna file path check kar lena bhai)
+titanic_data = pd.read_csv('/content/train.csv')
+
+# ==========================================
+# 2. HANDLING MISSING VALUES (Data Cleaning)
+# ==========================================
+
+# 'Cabin' column mein bohot zyada missing values hoti hain, isliye use drop kar dete hain
+titanic_data = titanic_data.drop(columns='Cabin', axis=1)
+
+# 'Age' column ki missing values ko uske Average (Mean) se bhar dete hain
+titanic_data['Age'] = titanic_data['Age'].fillna(titanic_data['Age'].mean())
+
+# 'Embarked' column (jahan se log baithe the) mein jo 2 missing values hain, unhe sabse zyada baar aane wale value (Mode) se bhar dete hain
+titanic_data['Embarked'] = titanic_data['Embarked'].fillna(titanic_data['Embarked'].mode()[0])
+
+# ==========================================
+# 3. DATA ENCODING (Text to Numbers)
+# ==========================================
+
+# 'Sex' column ko convert karna (male: 0, female: 1)
+titanic_data.replace({'Sex': {'male': 0, 'female': 1}}, inplace=True)
+
+# 'Embarked' column ko convert karna (S: 0, C: 1, Q: 2)
+titanic_data.replace({'Embarked': {'S': 0, 'C': 1, 'Q': 2}}, inplace=True)
+
+# ==========================================
+# 4. SPLITTING FEATURES AND TARGET
+# ==========================================
+
+# Features (X): Unnecessary columns aur 'Survived' (Target) ko drop karna
+X = titanic_data.drop(columns=['PassengerId', 'Name', 'Ticket', 'Survived'], axis=1)
+
+# Target (Y): Sirf 'Survived' column (0 = Died, 1 = Survived)
+Y = titanic_data['Survived']
+
+# Data ko Train aur Test sets mein split karna (80% Train, 20% Test)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=2)
+
+print("Data Splitting Completed:")
+print(f"X_train shape: {X_train.shape}")
+print(f"X_test shape: {X_test.shape}\n")
+
+# ==========================================
+# 5. MODEL TRAINING (Logistic Regression)
+# ==========================================
+
+# Logistic Regression model load karna
+model = LogisticRegression(max_iter=1000)
+
+# Model ko training data par train karna
+model.fit(X_train, Y_train)
+print("Logistic Regression Model Trained Successfully!\n")
+
+# ==========================================
+# 6. MODEL EVALUATION (Accuracy Score)
+# ==========================================
+
+# Training data par accuracy check karna
+X_train_prediction = model.predict(X_train)
+training_data_accuracy = accuracy_score(Y_train, X_train_prediction)
+print(f"Accuracy on Training Data: {training_data_accuracy * 100:.2f}%")
+
+# Test data par accuracy check karna (Asli test)
+X_test_prediction = model.predict(X_test)
+test_data_accuracy = accuracy_score(Y_test, X_test_prediction)
+print(f"Accuracy on Test Data: {test_data_accuracy * 100:.2f}%\n")
+
+# ==========================================
+# 7. PREDICTIVE SYSTEM (Naye Passenger Ka Check)
+# ==========================================
+
+# Ek random passenger ka data input 
+# Format: Pclass, Sex, Age, SibSp, Parch, Fare, Embarked
+# Example: Class=3, Sex=Male(0), Age=35, SibSp=0, Parch=0, Fare=8.05, Embarked=S(0)
+input_data = (3, 0, 35, 0, 0, 8.05, 0)
+
+# Input data ko numpy array mein badalna aur reshape karna
+input_data_as_numpy_array = np.asarray(input_data)
+input_data_reshaped = input_data_as_numpy_array.reshape(1, -1)
+
+# Final Prediction nikalna
+prediction = model.predict(input_data_reshaped)
+
+print("--- FINAL PREDICTION RESULT ---")
+if prediction[0] == 1:
+    print("The passenger is predicted to: SURVIVED 🎉")
+else:
+    print("The passenger is predicted to: NOT SURVIVED 🛑")
